@@ -57,6 +57,19 @@ def validate_jan_2026_date(date_str: str) -> None:
             detail=f"Date '{date_str}' is outside the strictly supported scope of January 2026 (2026-01-01 to 2026-01-31)."
         )
 
+@app.get("/")
+@app.head("/")
+async def root():
+    """Root endpoint for health probes and basic API info."""
+    return {
+        "status": "healthy",
+        "service": "WindSight — UK Wind Analytics API",
+        "version": "1.0.0",
+        "docs_url": "/docs",
+        "health_check": "/api/health",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
 @app.get("/api/health")
 async def health_check():
     """Basic health check endpoint."""
