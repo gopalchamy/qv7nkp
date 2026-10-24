@@ -1,4 +1,5 @@
 import math
+from typing import List, Optional
 try:
     from backend.app.schemas.models import MatchedInterval, AccuracyMetrics
     from backend.app.config import settings
