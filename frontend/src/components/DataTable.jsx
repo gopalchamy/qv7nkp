@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronLeft, ChevronRight, History, ArrowUpDown } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, History, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 export default function DataTable({ intervals, onInspectVintages }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,32 +56,43 @@ export default function DataTable({ intervals, onInspectVintages }) {
     }) + ' UTC';
   };
 
+  const renderSortIcon = (field) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 text-slate-500 opacity-60" />;
+    return sortAsc ? <ArrowUp className="w-3 h-3 text-cyan-400" /> : <ArrowDown className="w-3 h-3 text-cyan-400" />;
+  };
+
   return (
-    <div className="dashboard-card" id="data-table-section">
-      <div className="card-header-bar">
-        <div className="card-title-group">
-          <h2>Interval Outturn & Forecast Error Ledger</h2>
-          <p>Matched half-hour & hourly delivery intervals with selected vintage publish times</p>
+    <div className="glass-card p-5 sm:p-6 border-slate-800/80" id="data-table-section">
+      {/* Header and Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-800/60">
+        <div>
+          <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+            Interval Outturn & Forecast Error Ledger
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Full granular record of half-hour and hourly delivery intervals with selected vintage publish times
+          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <div style={{ position: 'relative' }}>
+        <div className="flex items-center gap-3">
+          {/* Search box */}
+          <div className="relative">
             <input
               type="text"
-              placeholder="Filter date or time..."
-              className="input-control"
-              style={{ paddingLeft: '2rem', width: '220px' }}
+              placeholder="Search date or time..."
+              className="form-control-dark pl-9 w-48 sm:w-56 text-xs"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
             />
-            <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
           </div>
 
+          {/* Page size */}
           <select
-            className="select-control"
+            className="form-control-dark text-xs cursor-pointer py-1.5"
             value={pageSize}
             onChange={(e) => {
               setPageSize(Number(e.target.value));
@@ -95,60 +106,87 @@ export default function DataTable({ intervals, onInspectVintages }) {
         </div>
       </div>
 
-      <div className="table-container">
-        <table className="data-table" id="main-data-table">
+      {/* Table Canvas */}
+      <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950/40">
+        <table className="w-full text-left text-xs">
           <thead>
-            <tr>
-              <th onClick={() => handleSort('start_time')} style={{ cursor: 'pointer' }}>
-                Delivery Time (UTC) <ArrowUpDown size={12} style={{ display: 'inline', marginLeft: '4px' }} />
+            <tr className="bg-slate-900/80 border-b border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
+              <th onClick={() => handleSort('start_time')} className="py-3 px-4 cursor-pointer hover:text-white transition-colors">
+                <div className="flex items-center gap-1.5">
+                  <span>Delivery Interval (UTC)</span>
+                  {renderSortIcon('start_time')}
+                </div>
               </th>
-              <th onClick={() => handleSort('forecast_mw')} style={{ cursor: 'pointer' }}>
-                Forecast (MW) <ArrowUpDown size={12} style={{ display: 'inline', marginLeft: '4px' }} />
+              <th onClick={() => handleSort('forecast_mw')} className="py-3 px-4 cursor-pointer hover:text-white transition-colors">
+                <div className="flex items-center gap-1.5">
+                  <span>Forecast (MW)</span>
+                  {renderSortIcon('forecast_mw')}
+                </div>
               </th>
-              <th onClick={() => handleSort('actual_mw')} style={{ cursor: 'pointer' }}>
-                Actual (MW) <ArrowUpDown size={12} style={{ display: 'inline', marginLeft: '4px' }} />
+              <th onClick={() => handleSort('actual_mw')} className="py-3 px-4 cursor-pointer hover:text-white transition-colors">
+                <div className="flex items-center gap-1.5">
+                  <span>Metered (MW)</span>
+                  {renderSortIcon('actual_mw')}
+                </div>
               </th>
-              <th onClick={() => handleSort('error_mw')} style={{ cursor: 'pointer' }}>
-                Signed Error <ArrowUpDown size={12} style={{ display: 'inline', marginLeft: '4px' }} />
+              <th onClick={() => handleSort('error_mw')} className="py-3 px-4 cursor-pointer hover:text-white transition-colors">
+                <div className="flex items-center gap-1.5">
+                  <span>Signed Error</span>
+                  {renderSortIcon('error_mw')}
+                </div>
               </th>
-              <th onClick={() => handleSort('abs_error_mw')} style={{ cursor: 'pointer' }}>
-                Abs Error <ArrowUpDown size={12} style={{ display: 'inline', marginLeft: '4px' }} />
+              <th onClick={() => handleSort('abs_error_mw')} className="py-3 px-4 cursor-pointer hover:text-white transition-colors">
+                <div className="flex items-center gap-1.5">
+                  <span>Absolute Error</span>
+                  {renderSortIcon('abs_error_mw')}
+                </div>
               </th>
-              <th>Pct Error</th>
-              <th>Selected Publish Time</th>
-              <th>Forecast Versions</th>
+              <th className="py-3 px-4">Relative Error</th>
+              <th className="py-3 px-4">Selected Publish Time</th>
+              <th className="py-3 px-4 text-right">Audit Trail</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-800/50">
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)' }}>
-                  No matching interval records found.
+                <td colSpan={8} className="py-8 text-center text-slate-500 font-medium">
+                  No matching intervals found for query.
                 </td>
               </tr>
             ) : (
               paginated.map((row) => (
-                <tr key={row.start_time}>
-                  <td style={{ fontWeight: 600 }}>{formatUtcTime(row.start_time)}</td>
-                  <td style={{ color: 'var(--accent-amber)' }}>{row.forecast_mw.toLocaleString()}</td>
-                  <td style={{ color: 'var(--accent-cyan)' }}>{row.actual_mw.toLocaleString()}</td>
-                  <td>
-                    <span className={row.error_mw >= 0 ? 'badge-over' : 'badge-under'}>
+                <tr key={row.start_time} className="hover:bg-slate-800/30 transition-colors">
+                  <td className="py-3 px-4 font-mono font-medium text-slate-200">
+                    {formatUtcTime(row.start_time)}
+                  </td>
+                  <td className="py-3 px-4 font-mono font-bold text-amber-400">
+                    {row.forecast_mw.toLocaleString()} MW
+                  </td>
+                  <td className="py-3 px-4 font-mono font-bold text-cyan-400">
+                    {row.actual_mw.toLocaleString()} MW
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={row.error_mw >= 0 ? 'badge-glow-amber' : 'badge-glow-cyan'}>
                       {row.error_mw >= 0 ? `+${row.error_mw.toLocaleString()}` : row.error_mw.toLocaleString()} MW
                     </span>
                   </td>
-                  <td>{row.abs_error_mw.toLocaleString()} MW</td>
-                  <td>{row.pct_error !== null ? `${row.pct_error}%` : '—'}</td>
-                  <td style={{ color: 'var(--text-muted)' }}>{formatUtcTime(row.forecast_publish_time)}</td>
-                  <td>
+                  <td className="py-3 px-4 font-mono text-slate-300">
+                    {row.abs_error_mw.toLocaleString()} MW
+                  </td>
+                  <td className="py-3 px-4 font-mono text-slate-400">
+                    {row.pct_error !== null ? `${row.pct_error}%` : '—'}
+                  </td>
+                  <td className="py-3 px-4 font-mono text-slate-400">
+                    {formatUtcTime(row.forecast_publish_time)}
+                  </td>
+                  <td className="py-3 px-4 text-right">
                     <button
-                      className="btn btn-ghost"
-                      style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                      className="btn-ghost-dark"
                       onClick={() => onInspectVintages(row.start_time)}
-                      title="View all forecast vintages issued for this interval"
+                      title="Inspect all published forecast versions for this interval"
                     >
-                      <History size={12} />
-                      <span>Inspect Vintages</span>
+                      <History className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Inspect</span>
                     </button>
                   </td>
                 </tr>
@@ -158,28 +196,29 @@ export default function DataTable({ intervals, onInspectVintages }) {
         </table>
       </div>
 
-      <div className="table-pagination">
+      {/* Pagination Footer */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 text-xs text-slate-400 font-medium">
         <div>
           Showing {filteredAndSorted.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{' '}
           {Math.min(currentPage * pageSize, filteredAndSorted.length)} of {filteredAndSorted.length} intervals
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div className="flex items-center gap-2">
           <button
-            className="btn btn-ghost"
-            style={{ padding: '0.3rem 0.6rem' }}
+            className="btn-ghost-dark py-1 px-2.5 disabled:opacity-40"
             disabled={currentPage <= 1}
             onClick={() => setCurrentPage(currentPage - 1)}
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft className="w-4 h-4" />
           </button>
-          <span>Page {currentPage} of {totalPages}</span>
+          <span className="font-mono text-slate-300">
+            Page {currentPage} of {totalPages}
+          </span>
           <button
-            className="btn btn-ghost"
-            style={{ padding: '0.3rem 0.6rem' }}
+            className="btn-ghost-dark py-1 px-2.5 disabled:opacity-40"
             disabled={currentPage >= totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
           >
-            <ChevronRight size={16} />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>

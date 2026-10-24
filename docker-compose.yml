@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: windsight-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ELEXON_API_BASE_URL=https://data.elexon.co.uk/bmrs/api/v1
+      - CACHE_DIR=/app/data/cache
+      - CACHE_ENABLED=true
+      - FRONTEND_URL=http://localhost:3000
+    volumes:
+      - windsight_data:/app/data/cache
+    networks:
+      - windsight_net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: windsight-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - windsight_net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  windsight_data:
+    driver: local
+
+networks:
+  windsight_net:
+    driver: bridge

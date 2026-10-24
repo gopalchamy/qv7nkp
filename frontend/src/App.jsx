@@ -7,12 +7,18 @@ import ErrorChart from './components/ErrorChart';
 import DataTable from './components/DataTable';
 import VintageModal from './components/VintageModal';
 import { fetchHealth, fetchDataStatus, fetchSummary, fetchVintageHistory } from './services/api';
-import { AlertCircle, ShieldAlert } from 'lucide-react';
+import { AlertCircle, LayoutDashboard, BarChart2, Table as TableIcon, Layers, Info } from 'lucide-react';
 
 export default function App() {
   const [startDate, setStartDate] = useState('2026-01-01');
   const [endDate, setEndDate] = useState('2026-01-07');
   const [cutoffRule, setCutoffRule] = useState('DA_1200');
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'overview', 'risk', 'ledger'
+
+  // Theme state: 'dark' or 'light'
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('windsight_theme') || 'dark';
+  });
 
   const [dataStatus, setDataStatus] = useState(null);
   const [summaryData, setSummaryData] = useState(null);
@@ -26,7 +32,23 @@ export default function App() {
   const [vintageHistory, setVintageHistory] = useState(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
-  // Initial load: check health & status, then fetch initial summary
+  // Sync theme with HTML class and localStorage
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('windsight_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   const loadStatus = useCallback(async () => {
     try {
       const status = await fetchDataStatus();
@@ -78,15 +100,17 @@ export default function App() {
   };
 
   return (
-    <div className="app-container">
-      {/* 1. Header */}
+    <div className="min-h-screen text-slate-900 dark:text-slate-100 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto flex flex-col gap-6 transition-colors duration-300">
+      {/* 1. Header with Theme Toggle */}
       <Header
         dataStatus={dataStatus}
         isRefreshing={isRefreshing}
         onRefresh={() => loadSummary(true)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
-      {/* 2. Filter Panel */}
+      {/* 2. Filter & Controls Bar */}
       <FilterPanel
         startDate={startDate}
         endDate={endDate}
@@ -100,35 +124,81 @@ export default function App() {
 
       {/* Error Banner */}
       {errorMessage && (
-        <div style={{
-          background: 'rgba(244, 63, 94, 0.12)',
-          border: '1px solid rgba(244, 63, 94, 0.3)',
-          color: '#fda4af',
-          padding: '1rem 1.25rem',
-          borderRadius: '10px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
-          <AlertCircle size={20} />
+        <div className="glass-card p-4 rounded-xl border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300 flex items-center gap-3 text-sm">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-500" />
           <div>
-            <strong>Data Loading Warning:</strong> {errorMessage}
+            <strong className="font-semibold">Notice:</strong> {errorMessage}
           </div>
         </div>
       )}
 
-      {/* 3. Summary KPI Cards */}
+      {/* 3. Executive Summary KPI Cards */}
       {summaryData && (
         <SummaryCards metrics={summaryData.metrics} />
       )}
 
-      {/* 4. Forecast vs Actual Chart */}
-      {summaryData && (
+      {/* Tab Switcher */}
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              activeTab === 'all'
+                ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800/40'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Full Executive View</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              activeTab === 'overview'
+                ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800/40'
+            }`}
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Forecast vs Actual</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('risk')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              activeTab === 'risk'
+                ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800/40'
+            }`}
+          >
+            <BarChart2 className="w-3.5 h-3.5" />
+            <span>Error & Market Exposure</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('ledger')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              activeTab === 'ledger'
+                ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800/40'
+            }`}
+          >
+            <TableIcon className="w-3.5 h-3.5" />
+            <span>Interval Ledger</span>
+          </button>
+        </div>
+
+        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+          <Info className="w-3.5 h-3.5 text-slate-400" />
+          <span>Cutoff: <strong className="text-slate-700 dark:text-slate-300">{cutoffRule}</strong></span>
+        </div>
+      </div>
+
+      {/* 4. Forecast vs Actual Outturn Chart */}
+      {summaryData && (activeTab === 'all' || activeTab === 'overview') && (
         <ForecastChart intervals={summaryData.intervals} />
       )}
 
-      {/* 5. Error Analysis Chart & Extreme Deviations */}
-      {summaryData && (
+      {/* 5. Signed Error Distribution & Extremes */}
+      {summaryData && (activeTab === 'all' || activeTab === 'risk') && (
         <ErrorChart
           intervals={summaryData.intervals}
           topOver={summaryData.top_overforecasts}
@@ -137,15 +207,15 @@ export default function App() {
         />
       )}
 
-      {/* 6. Comprehensive Data Table */}
-      {summaryData && (
+      {/* 6. Interval Ledger Data Table */}
+      {summaryData && (activeTab === 'all' || activeTab === 'ledger') && (
         <DataTable
           intervals={summaryData.intervals}
           onInspectVintages={handleInspectVintages}
         />
       )}
 
-      {/* 7. Forecast Vintage History Modal */}
+      {/* 7. Vintage History Audit Modal */}
       <VintageModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -153,10 +223,17 @@ export default function App() {
         isLoading={isHistoryLoading}
       />
 
-      {/* Footer Info */}
-      <footer style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-        <p>WindSight UK Wind Power Forecast Analytics • Official Elexon BMRS Datasets: FUELHH & WINDFOR</p>
-        <p style={{ marginTop: '0.25rem' }}>Strictly January 2026 Delivery Intervals • UTC Timezone Convention • Configured Decision Cutoff: {cutoffRule}</p>
+      {/* Footer & Methodological Attribution */}
+      <footer className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/80 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1.5">
+        <p className="font-semibold text-slate-700 dark:text-slate-300">
+          WindSight — UK Day-Ahead Wind Generation Analytics & Decision Portal
+        </p>
+        <p>
+          Official Elexon BMRS Datasets: <code className="text-cyan-700 dark:text-cyan-400 font-mono">FUELHH</code> (Actual Wind) & <code className="text-amber-700 dark:text-amber-400 font-mono">WINDFOR</code> (Forecast Revisions) • Strict UTC Timestamping • January 2026 Delivery Dates
+        </p>
+        <p className="text-[11px] text-slate-400 dark:text-slate-400">
+          Customized analytics suite for UK wholesale market electricity purchasing teams evaluating day-ahead procurement.
+        </p>
       </footer>
     </div>
   );
